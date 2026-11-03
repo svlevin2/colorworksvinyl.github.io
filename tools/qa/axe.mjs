@@ -5,7 +5,7 @@ const require = createRequire((process.env.QA_TOOLS || '/workspace/colorworks/we
 const puppeteer = require('puppeteer-core');
 const axeSrc = fs.readFileSync(require.resolve('axe-core/axe.min.js'), 'utf8');
 const base = process.argv[2] || 'http://localhost:8765/colorworksvinyl.github.io/';
-const pages = process.argv.slice(3).length ? process.argv.slice(3) : ['', 'services/indoor-wall-graphics/', 'services/storefront-signage/', 'services/vehicle-graphics/', 'services/banners-large-format/', 'services/decals-stickers/', 'services/event-decals/', 'faq/', 'privacy/', 'terms/', 'accessibility/', '404.html'];
+const pages = process.argv.slice(3).length ? process.argv.slice(3) : ['', 'services/indoor-wall-graphics/', 'services/storefront-signage/', 'services/vehicle-graphics/', 'services/banners-large-format/', 'services/decals-stickers/', 'services/event-decals/', 'services/wall-murals/', 'services/lobby-logo-decals/', 'services/wayfinding-decals/', 'services/window-graphics/', 'services/store-hours-decals/', 'services/storefront-lettering/', 'services/vehicle-lettering/', 'services/fleet-decals/', 'services/banners/', 'services/logo-stickers/', 'services/die-cut-stickers/', 'services/dance-floor-decals/', 'services/wedding-monograms/', 'services/large-format-event-graphics/', 'services/full-color-vinyl-prints/', 'services/custom-vinyl-decals/', 'faq/', 'privacy/', 'terms/', 'accessibility/', '404.html'];
 const b = await puppeteer.launch({ executablePath: '/home/box/.local/bin/google-chrome', args: ['--no-sandbox'] });
 let total = 0;
 for (const p of pages) for (const w of [1440, 390]) {

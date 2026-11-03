@@ -9,7 +9,7 @@ import re, sys, urllib.request, urllib.error
 from html.parser import HTMLParser
 from urllib.parse import urljoin, urlparse
 BASE = sys.argv[1] if len(sys.argv) > 1 else "https://svlevin2.github.io/colorworksvinyl.github.io/"
-PAGES = ["", "services/indoor-wall-graphics/", "services/storefront-signage/", "services/vehicle-graphics/", "services/banners-large-format/", "services/decals-stickers/", "services/event-decals/", "faq/", "privacy/", "terms/", "accessibility/"]
+PAGES = ["", "services/indoor-wall-graphics/", "services/storefront-signage/", "services/vehicle-graphics/", "services/banners-large-format/", "services/decals-stickers/", "services/event-decals/", "services/wall-murals/", "services/lobby-logo-decals/", "services/wayfinding-decals/", "services/window-graphics/", "services/store-hours-decals/", "services/storefront-lettering/", "services/vehicle-lettering/", "services/fleet-decals/", "services/banners/", "services/logo-stickers/", "services/die-cut-stickers/", "services/dance-floor-decals/", "services/wedding-monograms/", "services/large-format-event-graphics/", "services/full-color-vinyl-prints/", "services/custom-vinyl-decals/", "faq/", "privacy/", "terms/", "accessibility/"]
 def get(u):
     try:
         r = urllib.request.urlopen(urllib.request.Request(u, headers={"User-Agent": "cw-qa"}), timeout=30)

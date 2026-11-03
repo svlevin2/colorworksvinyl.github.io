@@ -7,7 +7,7 @@ import fs from 'fs';
 const base = process.argv[2] || 'http://localhost:8765/colorworksvinyl.github.io/';
 const out = process.argv[3] || '/workspace/colorworks/website/qa-output/v2/devices';
 fs.mkdirSync(out + '/webkit-iphone-390', { recursive: true });
-const PAGES = ['', 'services/indoor-wall-graphics/', 'services/storefront-signage/', 'services/vehicle-graphics/', 'services/banners-large-format/', 'services/decals-stickers/', 'services/event-decals/', 'faq/', 'privacy/', 'terms/', 'accessibility/', '404.html'];
+const PAGES = ['', 'services/indoor-wall-graphics/', 'services/storefront-signage/', 'services/vehicle-graphics/', 'services/banners-large-format/', 'services/decals-stickers/', 'services/event-decals/', 'services/wall-murals/', 'services/lobby-logo-decals/', 'services/wayfinding-decals/', 'services/window-graphics/', 'services/store-hours-decals/', 'services/storefront-lettering/', 'services/vehicle-lettering/', 'services/fleet-decals/', 'services/banners/', 'services/logo-stickers/', 'services/die-cut-stickers/', 'services/dance-floor-decals/', 'services/wedding-monograms/', 'services/large-format-event-graphics/', 'services/full-color-vinyl-prints/', 'services/custom-vinyl-decals/', 'faq/', 'privacy/', 'terms/', 'accessibility/', '404.html'];
 if (process.env.PAGES) PAGES.splice(0, PAGES.length, ...process.env.PAGES.split(',').map(x => x === '/' ? '' : x));   // optional page filter
 const STUBS = { 'business-signage/': 'services/storefront-signage/', 'stickers-decals/': 'services/decals-stickers/', 'events/': 'services/event-decals/' };
 const PH = [[320, 568], [568, 320], [375, 667], [667, 375], [390, 844], [844, 390], [414, 896], [896, 414], [768, 1024], [1024, 768]];

@@ -167,7 +167,6 @@ if __name__ == '__main__':
             old_t += 1; FAIL.append(f'{os.path.relpath(f, ROOT)}: old title "Made and shipped"')
         if f.endswith('.html') and '/src/' not in f: body_uses += [os.path.relpath(f, ROOT)] * raw.count('Made and shipped in 1-2')
     print(f'CHECK step3-title exact={n3 - bad3}/{n3} old-title-hits={old_t}')
-    print(f'NOTE "Made and shipped in 1-2 business days..." body sentences kept (step 3 body, ticks, FAQ, trust strip): {len(body_uses)} in built pages')
     # Old Wix template phrase: allowed only once, as the Who We Are subhead (Steven asked for it, Nov 3 2026)
     for f in glob.glob(os.path.join(ROOT, '**/*.html'), recursive=True):
         if '/node_modules/' in f or '/.git/' in f: continue
@@ -202,7 +201,9 @@ if __name__ == '__main__':
     norm = lambda t: re.sub(r'[^a-z ]', '', _h.unescape(t).lower().replace('&', ' and ')).split()
     stop = {'vinyl', 'and', 'for', 'the', 'custom', 'decals', 'graphics'}
     cn = dup_h = eb = hw = 0
-    for f in sorted(glob.glob(os.path.join(ROOT, 'services/*/index.html'))):
+    import importlib.util as _iu
+    _sp = _iu.spec_from_file_location('cw_cats', os.path.join(ROOT, 'src', 'data', 'categories.py')); _cm = _iu.module_from_spec(_sp); _sp.loader.exec_module(_cm)
+    for f in sorted(os.path.join(ROOT, f'services/{c["slug"]}/index.html') for c in _cm.CATEGORIES):  # category pages only; product pages carry a merged product heading by design
         rel = os.path.relpath(f, ROOT); raw = open(f, encoding='utf-8').read(); cn += 1
         if re.search(r'How we work', raw): hw += 1; FAIL.append(f'{rel}: "How we work" block still present')
         h1 = re.search(r'<h1[^>]*>(.*?)</h1>', raw, re.S).group(1)
@@ -213,6 +214,107 @@ if __name__ == '__main__':
             if set(norm(e)) & (set(norm(h)) | set(norm(h1))) - stop: eb += 1; FAIL.append(f'{rel}: eyebrow "{e}" repeats heading "{h}"')
         if raw.count('class="steps"') != 1: FAIL.append(f'{rel}: expected exactly one steps list')
     print(f'CHECK category-template pages={cn} how-we-work={hw} h1-h2-near-dup={dup_h} eyebrow-repeats={eb}')
+    # Pass 2 (COO froze 09:20 CT, Nov 3 2026): timing lines, FAQ meta, product pages, examples flag
+    import html as _hh
+    sys.path.insert(0, os.path.join(ROOT, 'src', 'data'))
+    from products import PRODUCTS
+    from examples import EXAMPLES, EXAMPLES_APPROVED
+    from categories import CATEGORIES
+    BD = 'business ' + 'days'; bd_bad = bd_ok = 0
+    for f in sorted(glob.glob(os.path.join(ROOT, '**/*'), recursive=True)):
+        if not os.path.isfile(f) or '/.git/' in f or '/node_modules/' in f or re.search(r'\.(woff2|webp|png|jpg|ico|gz)$', f) or f.endswith('check_text.py'): continue
+        rel = os.path.relpath(f, ROOT); raw = open(f, encoding='utf-8', errors='ignore').read(); n = raw.count(BD)
+        if not n: continue
+        if rel in ('faq/index.html', os.path.join('src', 'pages', '40-faq.html')) and n == 2: bd_ok += n
+        else: bd_bad += n; FAIL.append(f'{rel}: "{BD}" x{n} outside the FAQ answer + FAQ JSON-LD')
+    print(f'CHECK business-days faq-only ok={bd_ok} outside={bd_bad}')
+    FAQ_A = 'Made and shipped in 1-2 business days after approval. Shipping time depends on the carrier.'
+    faq = open(os.path.join(ROOT, 'faq/index.html'), encoding='utf-8').read()
+    fa = faq.count(FAQ_A); print(f'CHECK faq-answer exact count={fa} (want 2: visible + JSON-LD)')
+    if fa != 2: FAIL.append('faq/index.html: FAQ answer "How fast is it made?" changed')
+    FAQ_M = 'Answers about quotes, turn-around, window graphics and ordering from ColorWorks Vinyl in Lake Zurich, IL.'
+    md = _hh.unescape((re.search(r'<meta name="description" content="([^"]*)"', faq) or [0, ''])[1])
+    og = _hh.unescape((re.search(r'<meta property="og:description" content="([^"]*)"', faq) or [0, ''])[1])
+    tw = re.search(r'twitter:description', faq)
+    print(f'CHECK faq-meta exact={md == FAQ_M} og={og == FAQ_M} twitter:description={"present" if tw else "absent (falls back to og)"}')
+    if md != FAQ_M or og != FAQ_M: FAIL.append(f'faq/index.html: meta/og description mismatch {md!r} {og!r}')
+    trust = re.findall(r'</span>(Fast turn-around\.?)</li>', home)
+    print(f'CHECK trust-strip {trust}')
+    if trust != ['Fast turn-around']: FAIL.append(f'index.html: trust strip timing mismatch {trust}')
+    n3b = bad3b = 0
+    for f in sorted(glob.glob(os.path.join(ROOT, '**/index.html'), recursive=True)):
+        if '/node_modules/' in f or '/.git/' in f: continue
+        for m in re.finditer(r'Step 3</span><h3>Made to Order</h3><p>(.*?)</p>', open(f, encoding='utf-8').read()):
+            n3b += 1
+            if m.group(1) != 'Fast turn-around.': bad3b += 1; FAIL.append(f'{os.path.relpath(f, ROOT)}: step 3 body {m.group(1)!r}')
+    print(f'CHECK step3-body "Fast turn-around." exact={n3b - bad3b}/{n3b}')
+    cats = {c['slug']: c for c in CATEGORIES}; live = {p['slug'] for p in PRODUCTS if p['emit']}
+    names = {pr.get('pass2'): pr['name'] for c in CATEGORIES for pr in c['products']}
+    sm = re.findall(r'<loc>([^<]+)</loc>', open(os.path.join(ROOT, 'sitemap.xml')).read())
+    pn = pbad = 0; exhits = 0
+    allex = [s for v in EXAMPLES.values() for e in v for s in (e if isinstance(e, tuple) else (e,))]
+    # Example format (COO 10:30 CT): 5 per page, title + 1-2 plain sentences, body says what it is AND what it is for
+    CLAIM = re.compile(r'\b(durab\w*|last(s|ing)?|years?|water\W?pr[o]\w*|weather\w*|uv|fade\w*|install\w*|inch(es)?|feet|ft|sq|same-day|rush|fast|quick\w*|days?|weeks?|cast|calendered|laminat\w*|matte|gloss\w*|reflective|price\w*|cost\w*|cheap\w*|we design|design work)\b', re.I)
+    USE = re.compile(r'(, so |\bso (?:that )?(?:you|your|people|customers|guests|visitors|everyone|nobody|the|each|first|drivers|members|whoever|neighbors|shoppers|sponsors|families)|\bfor \w+ to |, to |, for (?:fans|customers)|\bto (?:make|inspire|seal|hand out)\b|so you can)', re.I)
+    exn = exbad = 0
+    for slug, ex in EXAMPLES.items():
+        if len(ex) != 5: FAIL.append(f'examples {slug}: {len(ex)} examples, want 5')
+        for n, (t, b) in enumerate(ex, 1):
+            exn += 1; e0 = len(FAIL); allx = t + ' ' + b
+            sents = [x for x in re.split(r'(?<=[.?!])\s+', b.strip()) if x]
+            if not 1 <= len(sents) <= 2: FAIL.append(f'examples {slug}-{n}: {len(sents)} sentences')
+            if not b.endswith('.'): FAIL.append(f'examples {slug}-{n}: body does not end with a period')
+            if not USE.search(b): FAIL.append(f'examples {slug}-{n}: no use-case clause: {b!r}')
+            if DASH.search(allx): FAIL.append(f'examples {slug}-{n}: non-plain dash')
+            for bb in BANNED:
+                if re.search(bb, allx, re.I): FAIL.append(f'examples {slug}-{n}: banned {bb}')
+            m = CLAIM.search(b if slug != 'store-hours-decals' else re.sub(r'\bafter hours\b', '', b))
+            if m: FAIL.append(f'examples {slug}-{n}: claim word {m.group(0)!r}')
+            if re.search(r'\bpro' + r'of\b|reply ' + r'by email|dedicated to excellence', allx, re.I): FAIL.append(f'examples {slug}-{n}: reserved phrase')
+            if len(FAIL) > e0: exbad += 1
+    print(f'CHECK examples-format examples={exn} failing={exbad} (5/page, 1-2 sentences, use-case clause, plain hyphens, banned and claim words)')
+    for p in PRODUCTS:
+        if not p['emit']: continue
+        pn += 1; rel = f'services/{p["slug"]}/index.html'; f = os.path.join(ROOT, rel)
+        if not os.path.exists(f): FAIL.append(f'{rel}: missing'); pbad += 1; continue
+        raw = open(f, encoding='utf-8').read(); u = _hh.unescape; e0 = len(FAIL)
+        t = u(re.search(r'<title>(.*?)</title>', raw).group(1)); d = u(re.search(r'<meta name="description" content="([^"]*)"', raw).group(1))
+        h1 = u(re.sub(r'<[^>]+>', '', re.search(r'<h1[^>]*>(.*?)</h1>', raw, re.S).group(1)).strip())
+        if t != p['title']: FAIL.append(f'{rel}: title {t!r} != {p["title"]!r}')
+        if d != p['description']: FAIL.append(f'{rel}: meta {d!r} != {p["description"]!r}')
+        c = cats[p['cat']]
+        crumbs = [u(re.sub(r'<[^>]+>', '', x)).strip() for x in re.findall(r'<li[^>]*>(.*?)</li>', re.search(r'<nav class="crumbs[^"]*"[^>]*>(.*?)</nav>', raw, re.S).group(1), re.S)]
+        if crumbs != ['Home', 'Services', u(c['name']), h1]: FAIL.append(f'{rel}: crumbs {crumbs}')
+        canon = re.search(r'<link rel="canonical" href="([^"]+)"', raw).group(1)
+        if not canon.endswith(f'/services/{p["slug"]}/') or canon not in sm: FAIL.append(f'{rel}: canonical/sitemap {canon}')
+        types = [json.loads(m)['@type'] for m in re.findall(r'<script type="application/ld\+json">(.*?)</script>', raw, re.S)]
+        if 'Service' not in types or 'BreadcrumbList' not in types: FAIL.append(f'{rel}: JSON-LD types {types}')
+        for need in ('id="include-title"', 'class="steps"', 'Related products', f'More in {c["name"]}', 'Request a quote', 'tel:+18332984695'):
+            if need not in raw: FAIL.append(f'{rel}: missing {need!r}')
+        if p['uses'] and "What it&#x27;s for" not in raw and "What it's for" not in raw: FAIL.append(f'{rel}: missing What it\'s for')
+        lis = re.findall(r'<li><span class="tick">.*?</span><span>(.*?)</span></li>', raw.split('id="uses-title"')[-1].split('</ul>')[0]) if p['uses'] else []
+        if [u(x) for x in lis] != [u(x) for x in p['uses']]: FAIL.append(f'{rel}: uses list {lis} != {p["uses"]}')
+        rel_links = re.findall(r'href="(?:\.\./)+services/([a-z0-9-]+)/"><span class="card-icon">', raw.split('class="related"')[1].split('</ul>')[0])
+        if rel_links != [r for r in p['related'] if r in live]: FAIL.append(f'{rel}: related {rel_links}')
+        if p.get('section') and f'id="{p["section"][1]}"' not in raw: FAIL.append(f'{rel}: merged anchor missing')
+        if not EXAMPLES_APPROVED:
+            for e in allex:
+                if e in u(raw): exhits += 1; FAIL.append(f'{rel}: example text visible while flag is off: {e!r}')
+            if '>Examples<' in raw: exhits += 1; FAIL.append(f'{rel}: Examples heading while flag is off')
+        for s in re.findall(r'(?:src|srcset)="([^"]+)"', raw):
+            for part in s.split(','):
+                pth = os.path.normpath(os.path.join(os.path.dirname(f), part.strip().split(' ')[0]))
+                if not os.path.exists(pth): FAIL.append(f'{rel}: missing image {part.strip()}')
+        if len(FAIL) > e0: pbad += 1
+    wm = next(p for p in PRODUCTS if p['slug'] == 'wall-murals')
+    if len(wm['uses']) != 2: FAIL.append('wall-murals: must keep only its 2 points')
+    print(f'CHECK product-pages built={pn} failing={pbad} examples-flag={EXAMPLES_APPROVED} example-text-hits={exhits} sitemap-urls={len(sm)}')
+    if len(sm) != 27: FAIL.append(f'sitemap: {len(sm)} URLs, want 27')
+    for c in CATEGORIES:
+        raw = open(os.path.join(ROOT, f'services/{c["slug"]}/index.html'), encoding='utf-8').read()
+        for pr in c['products']:
+            if pr.get('pass2') and 'href=' not in raw.split(f'>{pr["name"]}<')[0][-300:]: FAIL.append(f'services/{c["slug"]}: card "{pr["name"]}" not linked')
+    print(f'CHECK home-bullet-links={home.count("<li><a href=\"services/")}')
     for r in rows: print(f'PAGE {r[0]}: words={r[1]} title({r[3]})="{r[2]}" meta={r[4]}')
     for w in WARN: print('WARN', w)
     for x in FAIL: print('FAIL', x)

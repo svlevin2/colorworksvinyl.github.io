@@ -1,0 +1,63 @@
+<nav class="crumbs crumbs--product wrap" aria-label="Breadcrumb">
+  <ol>
+    <li><a href="{{home}}">Home</a></li>
+    <li><a href="{{home}}#services">Services</a></li>
+    <li><a href="{{root}}services/{{cat_slug}}/">{{cat_name}}</a></li>
+    <li><span aria-current="page">{{prod_name}}</span></li>
+  </ol>
+</nav>
+
+<section class="page-hero prod-hero acc-{{cat_acc}}" aria-labelledby="page-title">
+  <div class="wrap prod-hero-grid">
+    <div class="prod-hero-text">
+      <h1 id="page-title">{{prod_name}}</h1>
+      <p class="lead">{{prod_lead}}</p>
+      <div class="ctas">
+        <a class="btn btn-primary" href="mailto:info@colorworksvinyl.com">Request a quote</a>
+        <a class="btn btn-secondary" href="tel:+18332984695">{{icon:phone}}Call 1.833.CWVINYL</a>
+      </div>
+    </div>
+    <div class="prod-hero-media">
+      {{prod_hero}}
+    </div>
+  </div>
+</section>
+
+<section class="section bg-tint acc-{{cat_acc}}" aria-labelledby="{{prod_first_id}}">
+  <div class="wrap">{{prod_uses}}{{prod_section}}{{prod_examples}}
+    <div class="include include-box reveal">
+      <h2 id="include-title">What to include in your request</h2>
+      <ul class="checklist" aria-labelledby="include-title">
+{{cat_include}}
+      </ul>{{cat_note}}
+    </div>
+  </div>
+</section>
+{{cat_extra}}
+<section class="section wash" aria-labelledby="order-title">
+  <div class="wrap">
+    <div class="section-head center reveal">
+      <p class="eyebrow">How it works</p>
+      <h2 id="order-title">Three simple steps</h2>
+    </div>
+    <ol class="steps">
+      <li class="step reveal" style="--i:0"><span class="badge">{{icon:message-square-text:lg}}</span><span class="step-num">Step 1</span><h3>Tell us what you need</h3><p>Email us or call 1.833.CWVINYL with your size, colors and where it goes.</p></li>
+      <li class="step reveal" style="--i:1"><span class="badge">{{icon:mail:lg}}</span><span class="step-num">Step 2</span><h3>We send a quote and a digital proof</h3><p>Once you approve, we send a secure link to order and pay.</p></li>
+      <li class="step reveal" style="--i:2"><span class="badge">{{icon:package:lg}}</span><span class="step-num">Step 3</span><h3>Made to Order</h3><p>Fast turn-around.</p></li>
+    </ol>
+  </div>
+</section>
+
+<section class="section" aria-labelledby="related-title">
+  <div class="wrap">
+    <div class="section-head center reveal">
+      <h2 id="related-title">Related products</h2>
+    </div>
+    <ul class="related">
+{{prod_related}}
+    </ul>
+    <p class="more-in reveal"><a class="btn btn-secondary chev" href="{{root}}services/{{cat_slug}}/">More in {{cat_name}}</a></p>
+  </div>
+</section>
+
+{{band}}

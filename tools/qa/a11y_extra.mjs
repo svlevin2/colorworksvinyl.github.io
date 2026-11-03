@@ -3,7 +3,7 @@ import { createRequire } from 'module';
 const require = createRequire((process.env.QA_TOOLS || '/workspace/colorworks/website/qa-tools') + '/package.json');
 const puppeteer = require('puppeteer-core');
 const base = process.argv[2] || 'http://localhost:8765/colorworksvinyl.github.io/';
-const pages = ['', 'services/storefront-signage/', 'faq/', 'privacy/'];
+const pages = ['', 'services/storefront-signage/', 'services/vehicle-lettering/', 'services/custom-vinyl-decals/', 'faq/', 'privacy/'];
 const b = await puppeteer.launch({ executablePath: '/home/box/.local/bin/google-chrome', args: ['--no-sandbox'] });
 let fails = 0; const log = (ok, m) => { if (!ok) fails++; console.log((ok ? 'PASS ' : 'FAIL ') + m); };
 for (const p of pages) {

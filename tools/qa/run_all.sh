@@ -10,6 +10,7 @@ node tools/qa/hero_contrast.mjs "$BASE" | grep -E 'SUMMARY|FAIL'
 python3 tools/qa/live_check.py "$BASE" | tail -2
 python3 tools/qa/contrast.py | tail -1
 tools/qa/links.sh "$BASE" | tail -3
+python3 tools/qa/fragments.py | tail -1
 node tools/qa/axe.mjs "$BASE" | grep -E 'SUMMARY|^  -'
 node tools/qa/shots.mjs "$BASE" "$OUT/shots" | awk '{e+=$5; x+=$7} END {print "SUMMARY shots console-errors=" e " external-requests=" x}'
 tools/qa/lighthouse.sh "$BASE" "$OUT/lighthouse"
