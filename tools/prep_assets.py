@@ -16,16 +16,14 @@ IMG = os.path.join(ROOT, 'assets/img'); ICO = os.path.join(ROOT, 'assets/icons')
 # Fonts: Latin subset, woff2
 UNI = 'U+0020-007E,U+00A0,U+00A9,U+00AE,U+00D7,U+2019,U+201C,U+201D,U+2022,U+203A,U+2122'
 def sub(font, out):
-    opts = subset.Options(); opts.flavor = 'woff2'; opts.layout_features = ['kern', 'liga', 'smcp', 'c2sc']
+    opts = subset.Options(); opts.flavor = 'woff2'; opts.layout_features = ['kern', 'liga', 'calt', 'ss01', 'cv11', 'tnum', 'case']
     s = subset.Subsetter(opts); s.populate(unicodes=subset.parse_unicodes(UNI)); s.subset(font)
     font.flavor = 'woff2'; font.save(out); print(out, os.path.getsize(out))
-sub(TTFont(f'{FONTS}/CormorantSC-Bold.ttf'), f'{FNT}/cormorant-sc-700.woff2')
-os_ = TTFont(f'{FONTS}/OpenSans[wdth,wght].ttf')
-os_ = instancer.instantiateVariableFont(os_, {'wdth': 100, 'wght': (400, 700)})
-os_.save('/tmp/os-inst.ttf'); os_ = TTFont('/tmp/os-inst.ttf')
-sub(os_, f'{FNT}/open-sans-var.woff2')
-shutil.copy(f'{FONTS}/CormorantSC-OFL.txt', f'{FNT}/CormorantSC-OFL.txt')
-shutil.copy(f'{FONTS}/OpenSans-OFL.txt', f'{FNT}/OpenSans-OFL.txt')
+# Inter 4.1 variable (rsms/inter release zip, web/InterVariable.woff2), weight axis limited to 400-800, opsz kept
+it = instancer.instantiateVariableFont(TTFont(f'{FONTS}/InterVariable.woff2'), {'wght': (400, 800)})
+it.flavor = None; it.save('/tmp/inter-inst.ttf')
+sub(TTFont('/tmp/inter-inst.ttf'), f'{FNT}/inter-var.woff2')
+shutil.copy(f'{FONTS}/Inter-OFL.txt', f'{FNT}/Inter-OFL.txt')
 
 # Images: responsive webp widths
 jobs = {
@@ -47,7 +45,25 @@ for name, (f, widths) in jobs.items():
         out = f'{IMG}/{name}-{w}.webp'
         (im if w == im.width else im.resize((w, h), Image.LANCZOS)).save(out, 'WEBP', quality=78, method=6)
         print(out, w, h, os.path.getsize(out))
-shutil.copy(f'{SRC}/colorworks-vinyl-og-share-image v1.jpg', f'{IMG}/og-share-1200x630.jpg')
+# OG share image: keep the stripe and logo from the brand image, redraw the text lines
+# (the source image's last line mentions a marketplace, which the site must not show).
+from PIL import ImageDraw, ImageFont
+og = Image.open(f'{SRC}/colorworks-vinyl-og-share-image v1.jpg').convert('RGB')
+bgc = og.getpixel((600, 560)); canvas = Image.new('RGB', og.size, bgc); canvas.paste(og.crop((0, 0, og.width, 330)), (0, 0))
+d = ImageDraw.Draw(canvas)
+def inter(size, wght):
+    ft = ImageFont.truetype(f'{FONTS}/InterVariable.ttf', size); ft.set_variation_by_axes([min(32, max(14, size)), wght]); return ft
+for text, y, ft, col in [('Signage, stickers, decals and vinyl printing', 392, inter(44, 700), (255, 255, 255)),
+                         ('Lake Zurich, IL', 462, inter(30, 500), (201, 210, 223))]:
+    tw = d.textlength(text, font=ft); d.text(((og.width - tw) / 2, y), text, font=ft, fill=col)
+canvas.save(f'{IMG}/og-share-1200x630.jpg', quality=88, optimize=True); print('og rebuilt')
+
+# Real ColorWorks monogram designs (shop listing images), square, used on the events page
+ETSY = '/workspace/colorworks/website/build-v1/assets-etsy'
+for i, f in enumerate(['bs1.jpg', 'bs2.jpg', 'bs3.jpg', 'bs4.jpg', 'bs5.jpg', 'bs6.jpg']):
+    im = Image.open(f'{ETSY}/{f}').convert('RGB')
+    for w in (640, 320):
+        out = f'{IMG}/monogram-{i + 1}-{w}.webp'; im.resize((w, w), Image.LANCZOS).save(out, 'WEBP', quality=80, method=6); print(out, os.path.getsize(out))
 
 # Favicons
 fav = Image.open(f'{SRC}/colorworks-favicon-512 v1.png').convert('RGBA')

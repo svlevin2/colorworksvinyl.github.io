@@ -13,12 +13,20 @@
     toggle.setAttribute('aria-expanded', String(open));
     toggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
     menu.classList.toggle('is-open', open);
+    if (header) header.classList.toggle('is-menu-open', open);
   }
   if (toggle && menu) {
     toggle.addEventListener('click', function () { setMenu(toggle.getAttribute('aria-expanded') !== 'true'); });
     menu.addEventListener('click', function (e) { if (e.target.closest('a')) setMenu(false); });
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && toggle.getAttribute('aria-expanded') === 'true') { setMenu(false); toggle.focus(); }
+      if (toggle.getAttribute('aria-expanded') !== 'true') return;
+      if (e.key === 'Escape') { setMenu(false); toggle.focus(); return; }
+      if (e.key !== 'Tab') return;
+      // Keep focus inside the open menu: its links and the close button.
+      var f = Array.prototype.slice.call(menu.querySelectorAll('a')).concat([toggle]);
+      var i = f.indexOf(document.activeElement);
+      e.preventDefault();
+      f[i === -1 ? 0 : (i + (e.shiftKey ? -1 : 1) + f.length) % f.length].focus();
     });
     window.matchMedia('(min-width: 861px)').addEventListener('change', function (m) { if (m.matches) setMenu(false); });
   }

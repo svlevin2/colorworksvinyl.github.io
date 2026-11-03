@@ -1,0 +1,65 @@
+<nav class="crumbs wrap" aria-label="Breadcrumb">
+  <ol>
+    <li><a href="{{home}}">Home</a></li>
+    <li><a href="{{home}}#services">Services</a></li>
+    <li><span aria-current="page">{{cat_name}}</span></li>
+  </ol>
+</nav>
+
+<section class="page-hero cat-hero acc-{{cat_acc}}" aria-labelledby="page-title">
+  <div class="wrap">
+    <h1 id="page-title">{{cat_h1}}</h1>
+    <p class="lead">{{cat_lead}}</p>
+    <div class="ctas">
+      <a class="btn btn-primary" href="mailto:info@colorworksvinyl.com">Request a quote</a>
+      <a class="btn btn-secondary" href="tel:+18332984695">{{icon:phone}}Call 1.833.CWVINYL</a>
+    </div>
+    <div class="hero-art">
+      {{cat_hero}}
+    </div>
+  </div>
+</section>
+
+<section class="section bg-tint acc-{{cat_acc}}" id="products" aria-labelledby="products-title">
+  <div class="wrap">
+    <div class="section-head center reveal">
+      <h2 id="products-title">{{cat_products_title}}</h2>
+    </div>
+    <div class="grid-3 products">
+{{cat_products}}
+    </div>
+    <div class="include include-box reveal">
+      <h3 id="include-title">What to include in your request</h3>
+      <ul class="checklist" aria-labelledby="include-title">
+{{cat_include}}
+      </ul>{{cat_note}}
+    </div>
+  </div>
+</section>
+{{cat_extra}}
+<section class="section wash" aria-labelledby="order-title">
+  <div class="wrap">
+    <div class="section-head center reveal">
+      <p class="eyebrow">How it works</p>
+      <h2 id="order-title">Three simple steps</h2>
+    </div>
+    <ol class="steps">
+      <li class="step reveal" style="--i:0"><span class="badge">{{icon:message-square-text:lg}}</span><span class="step-num">Step 1</span><h3>Tell us what you need</h3><p>Email us or call 1.833.CWVINYL with your size, colors and where it goes.</p></li>
+      <li class="step reveal" style="--i:1"><span class="badge">{{icon:mail:lg}}</span><span class="step-num">Step 2</span><h3>We send a quote and a digital proof</h3><p>Once you approve, we send a secure link to order and pay.</p></li>
+      <li class="step reveal" style="--i:2"><span class="badge">{{icon:package:lg}}</span><span class="step-num">Step 3</span><h3>Made to Order</h3><p>Made and shipped in 1-2 business days after proof approval.</p></li>
+    </ol>
+  </div>
+</section>
+
+<section class="section" aria-labelledby="related-title">
+  <div class="wrap">
+    <div class="section-head center reveal">
+      <h2 id="related-title">More vinyl services</h2>
+    </div>
+    <ul class="related">
+{{cat_related}}
+    </ul>
+  </div>
+</section>
+
+{{band}}

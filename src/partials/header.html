@@ -1,10 +1,10 @@
 <body>
 <a class="skip-link" href="#main">Skip to content</a>
-<header class="site-header">
+<header class="site-header{{hdr}}">
   <nav class="nav wrap-wide" aria-label="Main">
     <a class="brand" href="{{home}}" aria-label="ColorWorks Vinyl, home">{{logo}}</a>
     <ul class="nav-menu" id="site-menu">
-      <li><a href="{{home}}#services"{{cur:services}}>Services</a></li>
+      <li class="has-sub"><a href="{{home}}#services"{{cur:services}}>Services</a><ul class="sub-menu" aria-label="Services">{{nav_services}}</ul></li>
       <li><a href="{{home}}#about">About</a></li>
       <li><a href="{{root}}faq/"{{cur:faq}}>FAQ</a></li>
       <li><a href="{{home}}#contact">Contact</a></li>

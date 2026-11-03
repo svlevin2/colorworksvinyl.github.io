@@ -5,7 +5,9 @@ cd "$(dirname "$0")/../.."
 BASE=${1:-http://localhost:8765/colorworksvinyl.github.io/}
 OUT=/workspace/colorworks/website/qa-output
 python3 tools/build.py >/dev/null
-python3 tools/qa/check_text.py | grep -E 'SUMMARY|FAIL|WARN'
+python3 tools/qa/check_text.py | grep -E 'SUMMARY|FAIL|WARN|^CHECK'
+node tools/qa/hero_contrast.mjs "$BASE" | grep -E 'SUMMARY|FAIL'
+python3 tools/qa/live_check.py "$BASE" | tail -2
 python3 tools/qa/contrast.py | tail -1
 tools/qa/links.sh "$BASE" | tail -3
 node tools/qa/axe.mjs "$BASE" | grep -E 'SUMMARY|^  -'

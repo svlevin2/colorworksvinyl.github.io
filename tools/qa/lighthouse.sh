@@ -3,7 +3,7 @@
 set -u
 QA=${QA_TOOLS:-/workspace/colorworks/website/qa-tools}
 BASE=${1:-http://localhost:8765/colorworksvinyl.github.io/}; OUT=${2:-/workspace/colorworks/website/qa-output/lighthouse}; shift 2 || true
-PAGES=("$@"); [ ${#PAGES[@]} -eq 0 ] && PAGES=("" business-signage/ stickers-decals/ events/ faq/ privacy/ terms/ accessibility/)
+PAGES=("$@"); [ ${#PAGES[@]} -eq 0 ] && PAGES=("" services/indoor-wall-graphics/ services/storefront-signage/ services/vehicle-graphics/ services/banners-large-format/ services/decals-stickers/ services/event-decals/ faq/ privacy/ terms/ accessibility/)
 mkdir -p "$OUT"; export CHROME_PATH=/home/box/.local/bin/google-chrome
 for p in "${PAGES[@]}"; do
   n=$(echo "${p:-home}" | tr -d '/'); [ -z "$n" ] && n=home

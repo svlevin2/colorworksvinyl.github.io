@@ -32,33 +32,166 @@ def render(text, ctx):
     if left: raise SystemExit(f"unfilled placeholders in {ctx.get('path')}: {set(left)}")
     return text
 
+import sys
+sys.dont_write_bytecode = True
+sys.path.insert(0, os.path.join(ROOT, 'src/data'))
+from categories import CATEGORIES, MOVED
+
+def pic(img, root, sizes, lazy=True, extra=''):
+    stem, a, b, w, h, alt = img
+    load = 'loading="lazy" ' if lazy else 'fetchpriority="high" '
+    return (f'<img src="{root}assets/img/{stem}-{b}.webp" srcset="{root}assets/img/{stem}-{a}.webp {a}w, {root}assets/img/{stem}-{b}.webp {b}w" '
+            f'sizes="{sizes}" width="{w}" height="{h}" {load}decoding="async" alt="{alt}"{extra}>')
+
+def cat_url(c, root): return f'{root}services/{c["slug"]}/'
+
+def shared(root):
+    """Category-driven snippets used by the header, footer and Home."""
+    nav = ''.join(f'<li><a href="{cat_url(c, root)}">{c["name"]}</a></li>' for c in CATEGORIES)
+    foot = '\n          '.join(f'<li><a href="{cat_url(c, root)}">{c["name"]}</a></li>' for c in CATEGORIES)
+    grid = []
+    for i, c in enumerate(CATEGORIES):
+        if c['card']:
+            art = ' card-media--art' if c['card'][0].startswith('monogram') else ''
+            media = f'<div class="card-media{art}">' + pic(c['card'], root, '(max-width: 734px) 88vw, (max-width: 1068px) 45vw, 380px') + '</div>'
+        else:
+            media = f'<div class="card-media card-media--tile" aria-hidden="true">{icon(c["icon"])}</div>'
+        items = ''.join(f'<li>{icon(pr["icon"])}<span>{pr["name"]}</span></li>' for pr in c['products'])
+        grid.append(f'''      <article class="card card-link svc acc-{c["acc"]} reveal" style="--i:{i % 3}">
+        {media}
+        <div class="card-body">
+          <span class="card-icon">{icon(c["icon"])}</span>
+          <h3><a href="{cat_url(c, root)}">{c["name"]}</a></h3>
+          <p>{c["summary"]}</p>
+          <ul class="svc-list">{items}</ul>
+          <span class="more chev" aria-hidden="true">Learn more</span>
+        </div>
+      </article>''')
+    return dict(nav_services=nav, footer_services=foot, services_grid='\n'.join(grid))
+
+def category_page(c):
+    """Front matter + body for one category page, from the single template src/partials/category.html."""
+    path = f'services/{c["slug"]}/'; root = '../../'; url = SITE + path
+    hero = (pic(c['hero'], '{{root}}', '(max-width: 734px) 88vw, (max-width: 1068px) 692px, 980px', lazy=False) if c['hero']
+            else f'<div class="art-tile" aria-hidden="true">{{{{icon:{c["icon"]}}}}}</div>')
+    prods = []
+    for i, pr in enumerate(c['products']):
+        tile = ('', ' tile-b', ' tile-c')[i % 3]
+        media = ('<div class="card-media">' + pic(pr['img'], '{{root}}', '(max-width: 734px) 88vw, (max-width: 1068px) 340px, 310px') + '</div>' if pr['img']
+                 else f'<div class="card-media card-media--tile{tile}" aria-hidden="true">{{{{icon:{pr["icon"]}}}}}</div>')
+        prods.append(f'''      <article class="card product reveal" style="--i:{i}">
+        {media}
+        <div class="card-body">
+          <span class="card-icon">{{{{icon:{pr["icon"]}}}}}</span>
+          <h3>{pr["name"]}</h3>
+          <p>{pr["line"]}</p>
+        </div>
+      </article>''')
+    extra = ''
+    if c.get('gallery'):
+        lis = ''.join(f'\n      <li class="reveal" style="--i:{i % 3}">' + pic((stem, 320, 640, 640, 640, alt), '{{root}}', '(max-width: 734px) 44vw, 310px') + '</li>' for i, (stem, alt) in enumerate(c['gallery']))
+        extra = f'''
+<section class="section" aria-labelledby="designs-title">
+  <div class="wrap">
+    <div class="section-head center reveal">
+      <h2 id="designs-title">A few of our monogram designs</h2>
+      <p class="lead">Sample designs. We customize the names, initials, date and colors for your event.</p>
+    </div>
+    <ul class="gallery">{lis}
+    </ul>
+  </div>
+</section>
+'''
+    # "What to include" box: approved Home checklist wording, plus the category's own approved line (if any) that is not
+    # already said by the steps ("quote by email", "made and shipped", "made to your size and colors" are dropped).
+    inc = [('ruler', 'The size, for example 12 x 12 inch, and how many'), ('palette', 'Your colors'),
+           ('map-pin', 'Where it goes, for example the outside of a door or window'), ('image-plus', 'Your logo or artwork, if you have it')]
+    dup = {'Made to your size and colors.', 'We send a quote by email.', 'Send your logo or artwork, if you have it.', 'Made and shipped in 1-2 business days after approval.'}
+    extra_lines = [(ic, t) for ic, t in c['ticks'] if t not in dup]
+    inc += [(ic, t.rstrip('.')) for ic, t in extra_lines if t.startswith('Choose')]   # a choice the buyer makes goes in the list
+    notes = [(ic, t) for ic, t in extra_lines if not t.startswith('Choose')]          # a fact about the product goes under it
+    ticks = '\n'.join(f'        <li><span class="tick">{{{{icon:{ic}}}}}</span><span>{t}</span></li>' for ic, t in inc)
+    note = ''.join(f'\n      <p class="include-note">{{{{icon:{ic}}}}}<span>{t}</span></p>' for ic, t in notes)
+    rel = '\n'.join(f'''      <li class="acc-{o["acc"]} reveal" style="--i:{i % 3}"><a href="{{{{root}}}}services/{o["slug"]}/"><span class="card-icon">{{{{icon:{o["icon"]}}}}}</span><span class="rel-text"><strong>{o["name"]}</strong><span>{o["summary"]}</span></span></a></li>'''
+                     for i, o in enumerate([o for o in CATEGORIES if o is not c]))
+    plain = lambda t: t.replace('&amp;', '&')
+    area = [{"@type": "City", "name": "Lake Zurich, IL"}, {"@type": "AdministrativeArea", "name": "Chicago, IL and nearby areas"}]
+    meta = dict(path=path, nav='services', title=c['title'], description=c['description'],
+                jsonld=[{"@context": "https://schema.org", "@type": "Service", "name": plain(c['name']), "serviceType": plain(c['name']), "description": plain(c['description']), "url": url,
+                         "areaServed": area,
+                         "provider": {"@type": "LocalBusiness", "name": "ColorWorks Vinyl", "url": SITE, "telephone": "+1-833-298-4695", "email": "info@colorworksvinyl.com", "areaServed": area},
+                         "hasOfferCatalog": {"@type": "OfferCatalog", "name": plain(c['name']), "itemListElement": [{"@type": "OfferCatalog", "name": pr['name'], "description": pr['line']} for pr in c['products']]}},
+                        {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [
+                            {"@type": "ListItem", "position": 1, "name": "Home", "item": SITE},
+                            {"@type": "ListItem", "position": 2, "name": "Services", "item": SITE + "#services"},
+                            {"@type": "ListItem", "position": 3, "name": plain(c['name']), "item": url}]}])
+    if c['hero']:
+        stem, a, b = c['hero'][:3]
+        meta['preload'] = [f'href="{{{{root}}}}assets/img/{stem}-{b}.webp" imagesrcset="{{{{root}}}}assets/img/{stem}-{a}.webp {a}w, {{{{root}}}}assets/img/{stem}-{b}.webp {b}w" imagesizes="(max-width: 734px) 88vw, (max-width: 1068px) 692px, 980px"']
+    body = P('category.html')
+    for k, v in dict(cat_name=c['name'], cat_acc=c['acc'], cat_h1=c['h1'], cat_lead=c['lead'], cat_hero=hero, cat_products='\n'.join(prods),
+                     cat_products_title='Vinyl products', cat_extra=extra, cat_include=ticks, cat_note=note, cat_related=rel).items():
+        body = body.replace('{{' + k + '}}', v)
+    return meta, body
+
+def moved_page(old, c):
+    meta = dict(path=old, nav='services', title='This Page Has Moved - ColorWorks Vinyl',
+                description=f'This page has moved. {c["name"].replace("&amp;", "and")} from ColorWorks Vinyl in Lake Zurich, IL is now at a new address on this site. Follow the link to see it.',
+                refresh=f'services/{c["slug"]}/')
+    body = f'''<section class="page-hero" aria-labelledby="page-title">
+  <div class="wrap">
+    <h1 id="page-title">This page has moved</h1>
+    <p class="lead">{c["name"]} now has its own page.</p>
+    <div class="ctas">
+      <a class="btn btn-primary" href="{{{{root}}}}services/{c["slug"]}/">Go to {c["name"]}</a>
+    </div>
+    <div class="hero-art"></div>
+  </div>
+</section>
+'''
+    return meta, body
+
+def render_page(meta, body):
+    path = meta['path']                       # '' for home, 'faq/' etc, '404.html' for 404
+    is404 = path == '404.html'
+    depth = 0 if is404 or path == '' else path.strip('/').count('/') + 1
+    root = BASE_PATH if is404 else '../' * depth
+    home = root if root else './'
+    ctx = dict(hdr='')
+    ctx.update(meta)
+    ctx.update(shared(root))
+    canon = SITE + meta['refresh'] if meta.get('refresh') else SITE + ('' if is404 else path)
+    ctx.update(root=root, home=home, site=SITE, logo=LOGO, url=canon,
+               preload=''.join(f'<link rel="preload" as="image" type="image/webp" {p}>\n' for p in meta.get('preload', [])).replace('{{root}}', root),
+               jsonld=''.join('<script type="application/ld+json">' + json.dumps(j, separators=(',', ':')) + '</script>\n' for j in meta.get('jsonld', [])))
+    ctx.pop('refresh', None)
+    ctx['band'] = render(P('band.html'), dict(ctx))
+    head = render(P('head.html'), ctx)
+    if meta.get('refresh'):
+        head = head.replace('</head>', f'<meta http-equiv="refresh" content="0; url={root}{meta["refresh"]}">\n</head>')
+    html = head + render(P('header.html'), ctx) + '<main id="main">\n' + render(body, ctx) + '</main>\n' + render(P('footer.html'), ctx)
+    dest = os.path.join(ROOT, path if is404 else os.path.join(path, 'index.html'))
+    os.makedirs(os.path.dirname(dest), exist_ok=True)
+    open(dest, 'w').write(html)
+    return dest
+
 def build():
-    out = []
+    out, pages = [], []
+    srcs = []
     for f in sorted(glob.glob(os.path.join(ROOT, 'src/pages/*.html'))):
         raw = open(f).read()
         m = re.match(r'\s*<!--(\{.*?\})-->\s*', raw, re.S)
-        meta = json.loads(m.group(1)); body = raw[m.end():]
-        path = meta['path']                       # '' for home, 'faq/' etc, '404.html' for 404
-        is404 = path == '404.html'
-        depth = 0 if is404 or path == '' else path.strip('/').count('/') + 1
-        root = BASE_PATH if is404 else '../' * depth
-        home = root if root else './'
-        ctx = dict(meta)
-        ctx.update(root=root, home=home, site=SITE, logo=LOGO,
-                   url=SITE + ('' if is404 else path),
-                   preload=''.join(f'<link rel="preload" as="image" type="image/webp" {p}>\n' for p in meta.get('preload', [])).replace('{{root}}', root),
-                   jsonld=''.join('<script type="application/ld+json">' + json.dumps(j, separators=(',', ':')) + '</script>\n' for j in meta.get('jsonld', [])))
-        ctx.pop('preload_list', None)
-        ctx['band'] = render(P('band.html'), dict(ctx))
-        html = render(P('head.html'), ctx) + render(P('header.html'), ctx) + '<main id="main">\n' + render(body, ctx) + '</main>\n' + render(P('footer.html'), ctx)
-        dest = os.path.join(ROOT, path if is404 else os.path.join(path, 'index.html'))
-        os.makedirs(os.path.dirname(dest), exist_ok=True)
-        open(dest, 'w').write(html)
-        out.append(dest)
-    # robots and sitemap (Disallow-all until launch)
+        srcs.append((json.loads(m.group(1)), raw[m.end():]))
+    cats = [category_page(c) for c in CATEGORIES]
+    moved = [moved_page(o, next(c for c in CATEGORIES if c['slug'] == s)) for o, s in MOVED.items()]
+    home = [x for x in srcs if x[0]['path'] == '']
+    rest = [x for x in srcs if x[0]['path'] != '']
+    for meta, body in home + cats + rest + moved:
+        out.append(render_page(meta, body))
+        if meta['path'] != '404.html' and not meta.get('refresh'): pages.append(meta['path'])
+    # robots and sitemap (Disallow-all until launch); moved pages and the 404 are left out
     open(os.path.join(ROOT, 'robots.txt'), 'w').write('# Pre-launch preview. Remove the Disallow line at launch.\nUser-agent: *\nDisallow: /\n')
-    pages = [json.loads(re.match(r'\s*<!--(\{.*?\})-->', open(f).read(), re.S).group(1))['path'] for f in sorted(glob.glob(os.path.join(ROOT, 'src/pages/*.html')))]
-    urls = ''.join(f'  <url><loc>{SITE}{p}</loc></url>\n' for p in pages if p != '404.html')
+    urls = ''.join(f'  <url><loc>{SITE}{p}</loc></url>\n' for p in pages)
     open(os.path.join(ROOT, 'sitemap.xml'), 'w').write(f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{urls}</urlset>\n')
     open(os.path.join(ROOT, '.nojekyll'), 'w').write('')
     for d in out: print('built', os.path.relpath(d, ROOT))
