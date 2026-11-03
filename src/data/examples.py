@@ -39,7 +39,7 @@ EXAMPLES = {
   ('Your shop name on the front window', 'Your shop name in vinyl lettering across the front window, so people can find you from across the street.'),
   ('Salon services lettered on the window', 'A list of your salon services in vinyl lettering on the window, so people walking by see what you offer.'),
   ('Cafe menu items lettered on the glass', 'Your menu favorites in vinyl lettering on the cafe window, so passersby see what is good before they come in.'),
-  ('Your office name and suite number on the door', 'Your office name and suite number in vinyl lettering on the door, so visitors and deliveries find you.'),
+  ('Your office name and suite number on the door', 'Your office name and suite number in vinyl lettering on the door, so visitors find the right door.'),
   ('A short tagline on the door glass or the window above the door', 'A short line in vinyl lettering, so people know what you do as they walk up to your door.')],
  'vehicle-lettering': [
   ('Your business name and phone on truck doors', 'Your business name and phone number in vinyl on both truck doors, so people who see your truck know who to call.'),

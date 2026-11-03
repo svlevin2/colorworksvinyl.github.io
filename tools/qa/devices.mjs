@@ -43,6 +43,7 @@ function pageChecks() {
       for (const s of e.querySelectorAll('span,a,strong')) { const z = parseFloat(getComputedStyle(s).fontSize); if (visible(s) && s.textContent.trim() && z < 16 && !s.closest('.eyebrow,.step-num,.tile-label')) f.push(`font ${z}px ${name(s)}`); }
     }
   }
+  // gallery slides 2-6 sit off to the side inside the scroll track by design, so .carousel-track text is exempt from offscreen
   // text clipping: text box wider than its element (with clipping overflow), or text past the viewport edge
   const blocks = [...document.querySelectorAll('h1,h2,h3,h4,p,li,a,button,span,strong,summary,dt,dd,label')].filter(e => visible(e) && [...e.childNodes].some(n => n.nodeType === 3 && n.textContent.trim()));
   const boxes = [];
@@ -52,7 +53,7 @@ function pageChecks() {
     for (const n of e.childNodes) {
       if (n.nodeType !== 3 || !n.textContent.trim()) continue;
       const rg = document.createRange(); rg.selectNodeContents(n);
-      for (const q of rg.getClientRects()) { if (q.width < 1) continue; if ((q.right > vw + 1 || q.left < -1) && !e.closest('.skip-link')) f.push(`offscreen ${name(e)}`); boxes.push([e, q]); }
+      for (const q of rg.getClientRects()) { if (q.width < 1) continue; if ((q.right > vw + 1 || q.left < -1) && !e.closest('.skip-link, .carousel-track')) f.push(`offscreen ${name(e)}`); boxes.push([e, q]); }
     }
   }
   const seen = new Set();

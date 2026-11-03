@@ -11,7 +11,7 @@
   <div class="wrap prod-hero-grid">
     <div class="prod-hero-text">
       <h1 id="page-title">{{prod_name}}</h1>
-      <p class="lead">{{prod_lead}}</p>
+      <p class="lead">{{prod_lead}}</p>{{prod_good}}
       <div class="ctas">
         <a class="btn btn-primary" href="mailto:info@colorworksvinyl.com">Request a quote</a>
         <a class="btn btn-secondary" href="tel:+18332984695">{{icon:phone}}Call 1.833.CWVINYL</a>
@@ -23,8 +23,13 @@
   </div>
 </section>
 
-<section class="section bg-tint acc-{{cat_acc}}" aria-labelledby="{{prod_first_id}}">
-  <div class="wrap">{{prod_uses}}{{prod_section}}{{prod_examples}}
+<section class="section bg-tint gallery-sec acc-{{cat_acc}}" aria-labelledby="examples-title" aria-roledescription="carousel">
+  <div class="wrap">{{prod_examples}}
+  </div>
+</section>
+
+<section class="section prod-depth acc-{{cat_acc}}" aria-labelledby="{{prod_first_id}}">
+  <div class="wrap">{{prod_details}}{{prod_section}}{{prod_faq}}
     <div class="include include-box reveal">
       <h2 id="include-title">What to include in your request</h2>
       <ul class="checklist" aria-labelledby="include-title">

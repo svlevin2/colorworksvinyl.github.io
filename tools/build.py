@@ -38,6 +38,7 @@ sys.path.insert(0, os.path.join(ROOT, 'src/data'))
 from categories import CATEGORIES, MOVED
 from products import PRODUCTS
 from examples import EXAMPLES, EXAMPLES_APPROVED
+from pass3 import PASS3, ALT6
 CAT = {c['slug']: c for c in CATEGORIES}
 LIVE = {p['slug']: p for p in PRODUCTS if p['emit']}           # product pages that are built and linked
 ENTRY = {pr['pass2']: (c, pr) for c in CATEGORIES for pr in c['products']}   # slug -> (category, card entry)
@@ -157,7 +158,7 @@ def category_page(c):
 
 def product_page(p):
     """Front matter + body for one product page, from the single template src/partials/product.html."""
-    c = CAT[p['cat']]; _, pr = ENTRY[p['slug']]
+    c = CAT[p['cat']]; _, pr = ENTRY[p['slug']]; P3 = PASS3[p['slug']]
     path = f'services/{p["slug"]}/'; url = SITE + path
     plain = lambda t: t.replace('&amp;', '&')
     img = pr['img'] if p['hero'] == 'card' else p['hero']
@@ -165,34 +166,41 @@ def product_page(p):
     sizes = '(max-width: 860px) 88vw, (max-width: 1068px) 45vw, 520px'
     hero = (f'<div class="prod-media{" prod-media--art" if art else ""}">' + pic(img, '{{root}}', sizes, lazy=False) + '</div>' if img
             else f'<div class="art-tile prod-tile" aria-hidden="true">{{{{icon:{pr["icon"]}}}}}</div>')
-    first = 'uses-title' if p['uses'] else 'include-title'
-    uses = ''
-    if p['uses']:
-        lis = '\n'.join(f'        <li><span class="tick">{{{{icon:check}}}}</span><span>{u}</span></li>' for u in p['uses'])
-        uses = ('\n    <div class="uses reveal">\n      <h2 id="uses-title">What it\'s for</h2>\n      <ul class="checklist">\n'
-                + lis + '\n      </ul>\n    </div>')
+    good = f'\n      <p class="good-for">{P3["good"]}</p>' if P3.get('good') else ''
     sec = ''
     if p.get('section'):
         mslug, anchor, head = p['section']; _, mpr = ENTRY[mslug]
         sec = (f'\n    <div class="merged reveal" id="{anchor}">\n      <span class="card-icon">{{{{icon:{mpr["icon"]}}}}}</span>\n'
-               f'      <div><h2>{head}</h2><p>{mpr["line"]}</p></div>\n    </div>')
-    ex = ''
-    if EXAMPLES_APPROVED and EXAMPLES.get(p['slug']):
-        # Shared Examples component: example 1 is a wide feature card, 2-5 a 2x2 grid; every other page mirrors the feature.
-        if not p['uses']: first = 'examples-title'
-        flip = [q['slug'] for q in PRODUCTS].index(p['slug']) % 2
-        cards = []
-        for i, (t, d) in enumerate(EXAMPLES[p['slug']], 1):
-            stem = f'ex-{p["slug"]}-{i}'
-            sz = '(max-width: 734px) 88vw, 560px' if i == 1 else '(max-width: 734px) 88vw, 480px'
-            if os.path.exists(os.path.join(ROOT, f'assets/img/{stem}-1200.webp')):
-                media = '<div class="card-media">' + pic((stem, 600, 1200, 1200, 900, 'Digital mockup of ' + t[0].lower() + t[1:]), '{{root}}', sz) + '</div>'
-            else:
-                media = f'<div class="card-media card-media--tile{("", " tile-b", " tile-c")[(i - 1) % 3]}" aria-hidden="true">{{{{icon:{pr["icon"]}}}}}</div>'
-            cls = 'card example example--feature' if i == 1 else 'card example'
-            cards.append(f'      <li class="{cls} reveal" style="--i:{(i - 1) % 2}">{media}<div class="card-body"><h3>{t}</h3><p>{d}</p></div></li>')
-        ex = (f'\n    <div class="examples{" examples--flip" if flip else ""}">\n      <h2 id="examples-title" class="reveal">Examples</h2>\n      <ul class="example-grid">\n'
-              + '\n'.join(cards) + '\n      </ul>\n    </div>')
+               f'      <div><h3>{head}</h3><p>{mpr["line"]}</p></div>\n    </div>')
+    # Pass 3 gallery: replaces the Examples grid. Slides 1-5 = approved examples; slide 6 only when its render exists.
+    assert EXAMPLES_APPROVED and len(EXAMPLES.get(p['slug'], [])) == 5, p['slug']
+    slides = list(EXAMPLES[p['slug']])
+    if os.path.exists(os.path.join(ROOT, f'assets/img/ex-{p["slug"]}-6-1200.webp')): slides.append(P3['cap6'])
+    lis = []
+    for i, (t_, d) in enumerate(slides, 1):
+        stem = f'ex-{p["slug"]}-{i}'
+        assert os.path.exists(os.path.join(ROOT, f'assets/img/{stem}-1200.webp')), stem
+        alt = 'Digital mockup of ' + (ALT6[p['slug']] if i == 6 else t_[0].lower() + t_[1:])
+        im = pic((stem, 600, 1200, 1200, 900, alt), '{{root}}', '(max-width: 734px) 82vw, 760px')
+        lis.append(f'        <div class="slide" role="group" aria-roledescription="slide" aria-label="{i} of {len(slides)}"><figure>'
+                   f'<div class="slide-media">{im}</div><figcaption><strong>{t_}</strong> {d}</figcaption></figure></div>')
+    ex = (f'\n    <h2 id="examples-title" class="gallery-title reveal">Examples</h2>'
+          f'\n    <div class="carousel reveal">'
+          f'\n      <div class="carousel-track" tabindex="0" role="group" aria-label="Example photos, use the arrow keys to move">\n' + '\n'.join(lis) +
+          f'\n      </div>\n      <div class="carousel-nav" hidden>'
+          f'\n        <button type="button" class="carousel-btn" data-dir="-1" aria-label="Previous photo">{{{{icon:chevron-left}}}}</button>'
+          f'\n        <p class="carousel-count" aria-live="polite" aria-atomic="true">1 of {len(slides)}</p>'
+          f'\n        <button type="button" class="carousel-btn" data-dir="1" aria-label="Next photo">{{{{icon:chevron-right}}}}</button>'
+          f'\n      </div>\n    </div>')
+    cards = ''.join(f'\n      <div class="detail reveal" style="--i:{i}"><span class="card-icon">{{{{icon:{ic}}}}}</span><h3>{h}</h3>' + ''.join(f'<p>{x}</p>' for x in xs) + '</div>'
+                    for i, (ic, h, xs) in enumerate(P3.get('sections', [])))
+    details = (f'\n    <h2 id="details-title" class="details-title reveal">The details</h2>\n    <div class="details details--{len(P3["sections"])}">{cards}\n    </div>') if cards else ''
+    faqs = P3.get('faqs', [])
+    faq = ''
+    if faqs:
+        faq = ('\n    <div class="prod-faq reveal">\n      <h2 id="faq-title">Common questions</h2>\n'
+               + '\n'.join(f'      <div class="qa"><h3>{q}</h3><p>{a}</p></div>' for q, a in faqs) + '\n    </div>')
+    first = 'details-title' if cards else ('faq-title' if faqs else 'include-title')
     ticks, note = include_box(c)
     rels = [LIVE[r] for r in p['related'] if r in LIVE]
     rel = '\n'.join(f'      <li class="acc-{CAT[o["cat"]]["acc"]} reveal" style="--i:{i % 3}"><a href="{{{{root}}}}services/{o["slug"]}/"><span class="card-icon">{{{{icon:{ENTRY[o["slug"]][1]["icon"]}}}}}</span>'
@@ -208,12 +216,15 @@ def product_page(p):
                             {"@type": "ListItem", "position": 2, "name": "Services", "item": SITE + "#services"},
                             {"@type": "ListItem", "position": 3, "name": plain(c['name']), "item": SITE + f'services/{c["slug"]}/'},
                             {"@type": "ListItem", "position": 4, "name": plain(pr['name']), "item": url}]}])
+    if faqs:
+        meta['jsonld'].append({"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
+            {"@type": "Question", "name": plain(q), "acceptedAnswer": {"@type": "Answer", "text": plain(a)}} for q, a in faqs]})
     if img:
         stem, a, b = img[:3]
         meta['preload'] = [f'href="{{{{root}}}}assets/img/{stem}-{b}.webp" imagesrcset="{{{{root}}}}assets/img/{stem}-{a}.webp {a}w, {{{{root}}}}assets/img/{stem}-{b}.webp {b}w" imagesizes="{sizes}"']
     body = P('product.html')
     for k, v in dict(cat_name=c['name'], cat_slug=c['slug'], cat_acc=c['acc'], prod_name=pr['name'], prod_lead=pr['line'], prod_hero=hero, prod_first_id=first,
-                     prod_uses=uses, prod_section=sec, prod_examples=ex, cat_include=ticks, cat_note=note,
+                     prod_good=good, prod_details=details, prod_section=sec, prod_faq=faq, prod_examples=ex, cat_include=ticks, cat_note=note,
                      cat_extra=gallery(c) if p.get('gallery') else '', prod_related=rel).items():
         body = body.replace('{{' + k + '}}', v)
     return meta, body

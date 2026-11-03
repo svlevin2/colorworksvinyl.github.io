@@ -41,3 +41,42 @@
   document.addEventListener('focusin', function (e) { var r = e.target.closest && e.target.closest('.reveal'); if (r) show(r); });
   window.addEventListener('beforeprint', function () { items.forEach(show); });
 })();
+
+/* Pass 3 gallery: prev/next buttons, Left/Right/Home/End keys on the track, "n of N" counter. No autoplay. */
+(function () {
+  var still = window.matchMedia('(prefers-reduced-motion: reduce)');
+  document.querySelectorAll('.carousel').forEach(function (c) {
+    var track = c.querySelector('.carousel-track'), slides = track.querySelectorAll('.slide');
+    var nav = c.querySelector('.carousel-nav'), count = c.querySelector('.carousel-count');
+    var prev = c.querySelector('[data-dir="-1"]'), next = c.querySelector('[data-dir="1"]');
+    var n = slides.length, cur = 0, raf = 0;
+    if (!nav || n < 2) return;
+    nav.hidden = false;
+    function index() {
+      var x = track.scrollLeft, best = 0, d = Infinity;
+      slides.forEach(function (s, i) { var dd = Math.abs(s.offsetLeft - track.offsetLeft - x); if (dd < d) { d = dd; best = i; } });
+      if (track.scrollLeft + track.clientWidth >= track.scrollWidth - 2) best = n - 1;
+      return best;
+    }
+    function update() {
+      raf = 0; cur = index();
+      count.textContent = (cur + 1) + ' of ' + n;
+      prev.setAttribute('aria-disabled', String(cur === 0));
+      next.setAttribute('aria-disabled', String(cur === n - 1));
+    }
+    function go(i) {
+      i = Math.max(0, Math.min(n - 1, i));
+      track.scrollTo({ left: slides[i].offsetLeft - track.offsetLeft, behavior: still.matches ? 'auto' : 'smooth' });
+    }
+    prev.addEventListener('click', function () { go(cur - 1); });
+    next.addEventListener('click', function () { go(cur + 1); });
+    track.addEventListener('keydown', function (e) {
+      var k = { ArrowLeft: cur - 1, ArrowRight: cur + 1, Home: 0, End: n - 1 }[e.key];
+      if (k === undefined) return;
+      e.preventDefault(); go(k);
+    });
+    track.addEventListener('scroll', function () { if (!raf) raf = requestAnimationFrame(update); }, { passive: true });
+    window.addEventListener('resize', function () { if (!raf) raf = requestAnimationFrame(update); });
+    update();
+  });
+})();

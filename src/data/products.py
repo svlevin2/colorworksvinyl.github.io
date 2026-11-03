@@ -42,7 +42,7 @@ PRODUCTS = [
  dict(slug='banners', cat='banners-large-format', emit=True,
       title='Vinyl Banners - ColorWorks Vinyl',
       description='Vinyl banners with your logo, message or event name, sized to the space, printed by ColorWorks Vinyl in Lake Zurich, IL. Request a quote.',
-      uses=['Your logo, message or event name', 'Sized to the space', 'For businesses and events'], related=['dance-floor-decals', 'logo-stickers', 'window-graphics'], hero=None),
+      uses=['Your logo, message or event name', 'Sized to the space', 'For businesses and events'], related=['dance-floor-decals', 'logo-stickers', 'window-graphics'], hero='card'),
  dict(slug='logo-stickers', cat='decals-stickers', emit=True,
       title='Vinyl Logo Stickers - ColorWorks Vinyl',
       description='Your logo, QR code or website on vinyl stickers for packaging and bags, from ColorWorks Vinyl in Lake Zurich, IL. Request a quote.',

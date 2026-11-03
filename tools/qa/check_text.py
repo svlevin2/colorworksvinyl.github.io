@@ -291,9 +291,12 @@ if __name__ == '__main__':
         if 'Service' not in types or 'BreadcrumbList' not in types: FAIL.append(f'{rel}: JSON-LD types {types}')
         for need in ('id="include-title"', 'class="steps"', 'Related products', f'More in {c["name"]}', 'Request a quote', 'tel:+18332984695'):
             if need not in raw: FAIL.append(f'{rel}: missing {need!r}')
-        if p['uses'] and "What it&#x27;s for" not in raw and "What it's for" not in raw: FAIL.append(f'{rel}: missing What it\'s for')
-        lis = re.findall(r'<li><span class="tick">.*?</span><span>(.*?)</span></li>', raw.split('id="uses-title"')[-1].split('</ul>')[0]) if p['uses'] else []
-        if [u(x) for x in lis] != [u(x) for x in p['uses']]: FAIL.append(f'{rel}: uses list {lis} != {p["uses"]}')
+        # Pass 3 (D5): the "What it's for" ticks fold into one "Good for:" line under the lead.
+        # Gate 5:18 PM CT: a page may drop the line when every use is already in the lead (check_dupes --built enforces lead vs Good for).
+        from pass3 import PASS3 as _P3
+        if _P3.get(p['slug'], {}).get('good') and not re.search(r'<p class="good-for">Good for: [^<]+</p>', raw): FAIL.append(f'{rel}: missing Good for line')
+        if not _P3.get(p['slug'], {}).get('good') and 'class="good-for"' in raw: FAIL.append(f'{rel}: Good for line present but dropped in pass3.py')
+        if "What it&#x27;s for" in raw or "What it's for" in raw: FAIL.append(f'{rel}: old What it\'s for list still present')
         rel_links = re.findall(r'href="(?:\.\./)+services/([a-z0-9-]+)/"><span class="card-icon">', raw.split('class="related"')[1].split('</ul>')[0])
         if rel_links != [r for r in p['related'] if r in live]: FAIL.append(f'{rel}: related {rel_links}')
         if p.get('section') and f'id="{p["section"][1]}"' not in raw: FAIL.append(f'{rel}: merged anchor missing')
