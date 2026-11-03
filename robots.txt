@@ -1,0 +1,3 @@
+# Pre-launch preview. Remove the Disallow line at launch.
+User-agent: *
+Disallow: /
