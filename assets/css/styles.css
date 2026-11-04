@@ -173,7 +173,6 @@ h3{font-size:22px;line-height:1.2;letter-spacing:-.018em;font-weight:650}
 .prose p,.prose li{color:#1D2F4C}
 .prose ul{padding-left:22px}
 .prose li{margin-bottom:6px}
-.draft-note{display:flex;gap:12px;align-items:flex-start;background:var(--cream);border-left:4px solid var(--navy);border-radius:var(--r-sm);padding:16px 20px;margin:24px 0 8px;font-size:16px}
 .meta-line{color:var(--muted);font-size:16px}
 
 /* Footer */
@@ -194,11 +193,11 @@ h3{font-size:22px;line-height:1.2;letter-spacing:-.018em;font-weight:650}
 /* Not found */
 .nf{min-height:60vh;display:grid;place-items:center;text-align:center}
 
-/* Reveal (added by JS only; content shows without JS) */
-.js .reveal{opacity:0;transform:translateY(var(--rise));transition:opacity var(--dur-base) var(--ease-out),transform var(--dur-base) var(--ease-out);transition-delay:calc(var(--i,0) * var(--stagger))}
-.js .reveal.is-in{opacity:1;transform:none}
+/* Reveal (added by JS only; content shows without JS). Move only, full opacity from first paint. */
+.js .reveal{transform:translateY(var(--rise));transition:transform var(--dur-base) var(--ease-out);transition-delay:calc(var(--i,0) * var(--stagger))}
+.js .reveal.is-in{transform:none}
 @media (prefers-reduced-motion:reduce){
-  .js .reveal{opacity:1;transform:none;transition:none}
+  .js .reveal,.js .reveal.is-in{transform:none;transition:none;animation:none}
   .card,.tile,.card-media img,.btn{transition:none}
   .card-link:hover,.tile:hover{transform:none}
   .card-link:hover .card-media img{transform:none}
